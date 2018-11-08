@@ -8,6 +8,7 @@
 # Import modules
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import axes3d
 
 # Geometry Parameters
 plateLen = 10.0
@@ -31,7 +32,7 @@ seqStart = 1
 cornerSpacing = 1.0*(len(expoDecay)-seqStart)/(nCorners)    # This gives the 
 corner = np.round(np.arange(seqStart,len(expoDecay)+1, cornerSpacing)) #indexes the position of each of the corners
             # on the exponential decay curve.
-print(corner)
+
 TempVec_Full = np.array([])
 for jj in range(0,nCorners):
     #This gives the temperature at each of the corners
@@ -42,15 +43,62 @@ TempVec_Full = TempVec_Full[0:int(colLength*TempGranularity)]
 
 # ---- Low Resolution Gradient ---- #
 TempVec_Lo = np.array([])
-for jj in range(0,nCorners):
+x_Lo = np.array([0.0])
+flag = 1
+for jj in range(0,nCorners-1):
     #This gives the temperature at each of the corners
-    TempVec_Lo = np.append(TempVec_Lo,[expoDecay[int(corner[jj]-1)],expoDecay[int(corner[jj])]])
+    TempVec_Lo = np.append(TempVec_Lo,[expoDecay[int(corner[jj]-1)],expoDecay[int(corner[jj+1]-1)]])
     #  This determines the temperature at each point along the isotherm.
 ##    TempVec_Lo = np.append(TempVec_Lo, np.repeat(expoDecay[int(corner[jj+1]-1)],2))
-plt.plot(TempVec_Lo,'r.-')
-plt.show()
+    # Add x data
+    x_Lo = np.append(x_Lo,x_Lo[-1]+(corner[jj+1]-corner[jj])/TempGranularity)
+    if (corner[jj]%5==0 and flag):
+        x_Lo = np.append(x_Lo,x_Lo[-1]+lenCross+2/TempGranularity)
+        flag = 0
+    else:
+        x_Lo = np.append(x_Lo,x_Lo[-1]+lenCross+1/TempGranularity)
+x_Lo = x_Lo[0:len(x_Lo)-1]
+##plt.plot(x_Lo,TempVec_Lo,'r.-')
 ##TempVec_Lo = TempVec_Lo[0:int(colLength*TempGranularity)]
 
-# Compare gradients
-plt.plot(x_Full,TempVec_Full,'k.-')
+### Compare gradients
+##plt.plot(x_Full,TempVec_Full,'k.')
+##plt.show()
+
+# Time increment parameters
+runTime_n = 1500000
+delta_t_Tolley = 0.0001
+t_Tot = delta_t_Tolley*runTime_n
+delta_t = 1
+
+# Temperature program ramp rate parameters
+T0 = 290.0
+tpRate = 0.25    # Degrees C per second
+
+# Create time array
+time = np.arange(0,t_Tot+delta_t,delta_t)
+
+# Open temperature matrix creation loop
+TempMat = np.zeros((len(time),len(x_Lo)))
+for i in range(len(time)):
+    T_ramp = TempVec_Lo + i*delta_t*tpRate + T0
+    TempMat[i,:] = T_ramp
+
+# Create grid for plotting
+xG,tG = np.meshgrid(x_Lo,time)
+
+# Save data
+save = 1
+if save:
+    np.savetxt('time.csv',time,delimiter=',')
+    np.savetxt('colPosition.csv',x_Lo,delimiter=',')
+    np.savetxt('temperature.csv',TempMat,delimiter=',')
+
+# Display 3D plot
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_wireframe(xG,tG,TempMat)
+ax.set_xlabel('Column Position (m)')
+ax.set_ylabel('Time (s)')
+ax.set_zlabel('Temperature (C)')
 plt.show()
