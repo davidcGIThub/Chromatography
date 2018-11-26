@@ -232,7 +232,7 @@ for n in range(0,runTime+1):
          #	I am doing the integral as simply the sum of the histogram pieces.  I could
          #	improve this step by using Simpson's rule or the Newton binomial trick if the
          #	Temperature can be modeled as a simple function of two variates. (HDT)
-    velocity_x = ( (p_i**2-p_o**2)*TempPlus[temp.astype(int)] * (diameter/2)**2 / ((16*HeFactor*totInt )*np.sqrt(abs(p_i**2-(p_i**2-p_o**2)*TSumPow[temp.astype(int)]/totInt ))) )
+    velocity_x = ((p_i**2-p_o**2)*TempPlus[temp.astype(int)] * (diameter/2)**2 / ((16*HeFactor*totInt )*np.sqrt(abs(p_i**2-(p_i**2-p_o**2)*TSumPow[temp.astype(int)]/totInt ))))
        # Velocity updated by HDT on 31 March 2015
     p_x = np.sqrt(abs((p_i**2-(p_i**2-p_o**2)*TSumPow[temp.astype(int)]/totInt)) ).flatten()
        #This is the pressure at x
