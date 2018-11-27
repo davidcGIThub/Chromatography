@@ -2,13 +2,44 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
-import parameters
+import Parameters_ExpSerpentine
+import interpolateTemperature as interpT
 
 ########################
 ###   NEW EQUATION:  This is a step by step program to generate a random walk model
 ###     for a varietly of moving thermal gradient profiles.
 ###		This code was UPDATED in Riva with Samuel in May 2016
 ####################
+
+TemperatureGradients = np.loadtxt('temperature.csv',delimiter = ',')
+colPosition = np.loadtxt('colPosition.csv',delimiter = ',')
+timeData = np.loadtxt('time.csv',delimiter = ',')
+tempGradData = interpT.GradientData(colPosition,timeData,TemperatureGradients)
+colLength = colPosition[len(colPosition)-1]   # Column length [cm]
+#####Parameters
+colors  = ['red','green','blue','grey30']
+markers = np.array(["o","^","P","x","D","v","s"])
+j = 2                       # Number of compounds
+nMol = 100                  # Number of molecules per compound used in simulation
+sigmaNot = 10000*math.sqrt(1.0/12)
+gamma1 = 5.113e-3           # Molecular diffusion coefficient when using both temp and pressure.
+taylor = 1.647e-1           # Dispersion coefficient due to resistence to transport and taylor dispersion.
+gamma3 = 7.676e-8           # Resistence to flow for adsorption/deporption (no pressure variable)
+gamma2 = 1.217e-9           # Golay's formula for resistence to transport when using both temp and pressure in diffusion expression.
+chkSm = 0
+X = np.array([9.0,10.0])    # Alkane length
+delta_t = 0.0001            # Time step
+R = 8.3144621               # Boltzman's constant [Joules/ Kelvin mole]
+T0 = 290.0                  # Initial temperature [Kelvin, K]
+diameter = 0.0100           # Inner diameter of the column [cm]
+p_i = 57.16                 # Column inlet pressure by gage measured in psi.  For true inlet must add atmosphere pressure.
+p_o = 13.8                  # This is the outlet pressure or Atmospheric pressure in psi.
+w = 6.0                     # velocity of gradient [cm/sec]
+tpRate = .25                # degrees C per second. Rate at which the column is heated after a gradient is established.
+TempGranularity = 1.0e2     # granularity of temperatures across column. data points/cm
+powerAce = 100.0
+aveGranularity = colLength/(len(colPosition)-1)
+#####################
 
 C = -7.22173 - 0.47406*X                # Formula for calculating C where X is the number of carbons.  Includes phase ratio
 C = np.array([-11.1277,-11.2829])       # ????? Stick with this assignment ????
@@ -19,55 +50,11 @@ p_i = p_i*6894.757          # This converts pressure from psi units to Pascals
 p_o = p_o*6894.757          # This converts pressure from psi units to Pascals
 p_i = p_i + p_o             #This is the true inlet pressure.
 
-###################
-#
-#		Here is the temperature profile function.
-#		It produces the initial heat gradient profile that we heat.
-#		We need to make this a function call to either a data file or a function.
-#
-#		The values needed are:
-#			Temp.granularity
-#			ramp.length
-#			ramp.height
-#			zone.len
-#			window
-#			col.length
-#
-#		Return a vector  Temp.vec that has the profile of temperature along
-#		the column.  We will then heat this profile up.
-#
-##################
-plateLen =  10.0 #60 #cm  Note that the plate width is calculated by subtracting the plate.len
-                  #from the column length and then dividing the difference by the number of
-                  # turns.  This are called isotherms.
-                  #
-decayConst = 0.5 #0.05  # THis is the exponential decay factor, giving the rate of decay
-TRamp = 50.0 #height of the temperature ramp; delta T across plate.  This is not T.0
-expoDecay = np.exp(-np.arange(1,(plateLen*TempGranularity)+1)/TempGranularity*decayConst)*TRamp
-     #This is determines the exponential decay
-     #
-#plot(expo.decay[(1:plate.len)*Temp.granularity],type='l', xlab='Temperature', main=paste("PlateLength: ",plate.len, " DecayConst: ", decay.const, "NumbCorners: ", n.corners))
-# Execute the above line to look at exponential temperature decay down plate.
-nCorners = 200# number of switchbacks, and rungs  #This turns out to be the number of isotherms.
-# n.corners <- col.length-plate.len
-lenCross = (colLength-plateLen)/nCorners  #This gives the length of each isotherm.
-seqStart = 1
-cornerSpacing = 1.0*(len(expoDecay)-seqStart)/(nCorners) ###check
-corner = np.round(np.arange(seqStart,len(expoDecay)+1, cornerSpacing)) #indexes the position of each of the corners
-            # on the exponential decay curve.
-TempVec = np.array([])
-for jj in range(0,nCorners):
-    #This gives the temperature at each of the corners
-    TempVec = np.append(TempVec,expoDecay[int(corner[jj]-1):int(corner[jj+1])])
-    #  This determines the temperature at each point along the isotherm.
-    TempVec = np.append(TempVec, np.repeat(expoDecay[int(corner[jj+1]-1)],lenCross*TempGranularity))
-TempVec = TempVec[0:int(colLength*TempGranularity)]
-#plot(Temp.vec[1:(col.length*10)*Temp.granularity/10],type='l', xlab='Temperature', main=expression(paste("PlateLength: ",plate.len, " DecayConst: ", decay.const, "NumbCorners: ", n.corners))) # Execute to look at temperature along column
-window = 100   #This is for the ksmooth function, below.  It should be proportional to the
-                # temperature granularity above.  Change either and you must change the other.
-#T
-Temp2PowVec = np.arange(0,1000+1/powerAce,1/powerAce)**1.646        #address the temperature /100, get the temp raised to the power
 
+TempVec = np.array([])
+#   the profile of temperature along the column
+
+Temp2PowVec = np.arange(0,1000+1/powerAce,1/powerAce)**1.646        #address the temperature /100, get the temp raised to the power
 #################
 #
 #	The vector 'Temp2Pow' is sequence of temperatures raised to the 1.646 power
@@ -75,15 +62,12 @@ Temp2PowVec = np.arange(0,1000+1/powerAce,1/powerAce)**1.646        #address the
 #
 #################
 
-
 runTime = 1500000  #Number of potential steps to get compounds out of column.
 #run.time <- 6000
 pauseCount = 10000  #number of frames to skip in plotting results.  The 'big.matrix'
                    # takes a snapshot at every 'pause.count' time for illustrating the
                    # progress of the molecules.
-bigMatrix = np.zeros((runTime/pauseCount+1,nMol*j))
-#  This has the location of every molecule at each recorded time point.  Only
-#   time points recorded are every "pause.count" apart.
+
 ##### Start Standard Execution
 x = np.zeros((j,nMol))
 detector = np.zeros((j,nMol))         # This matrix keeps track of x-axis location of each
@@ -106,21 +90,11 @@ for i in range(0,j):
 #	This is also used to plot location of the molecules.  The y-axis values for plot are determined
 #	from the matrix column index.  (Rows indicate analyte and column indicate individual molecules.)
 moveCount = 0
-resEnd = np.zeros((j,2))
-eluted1 = 1
-eluted2 = 1
 detected1 = np.array([0])
 detected2 = np.array([0])
-##########  Temporary pseudo-do-loop for debugging.
-# n <- 5
-##########  This is where the do-loop for n starts.
-totalTime1 = 0
-totalTime2 = 0
-spread1 = 0
-spread2 = 0
 
-Tmax = delta_t * runTime * tpRate + TRamp + T0
-Tmin = T0
+Tmax = np.amax(TemperatureGradients)
+Tmin = np.amin(TemperatureGradients)
 Tdelta = Tmax-Tmin
 peak_width = np.array([])
 plot_res = np.array([])
@@ -135,23 +109,9 @@ time = np.array([])
 
 for n in range(0,runTime+1):
 #for n in range(0,2):
-    TempPlus = TempVec + tpRate*n*delta_t + T0
-    #print(TempPlus)
-    #print(len(TempPlus))
-       #Here we heat up the whole column an amount 'tp.rate*delta.t
-           # from the last time increment.  To avoid numerical problems
-           # we simply multiply the temperature increment amount by the
-           # number of time steps, n, and add to initial temperature.
-           # Initial temperature is T.0 plus the temperature gradient profile.
-       #************
-       # Now I hold the temperature constant.  This is for isothermal of gradient
-       #  NOTE: Comment this out if allow heating of column over time.
-       #Temp.plus <- Temp.vec + T.0
-       #
-       #*************
-    temp = abs(x*TempGranularity+1)
-    temp[temp > colLength*TempGranularity] = colLength*TempGranularity
-    T_all = TempPlus[temp.astype(int)].flatten()
+    #Here we update the Gradient Temperature profile
+    TempVec = tempGradData.getGradient(n*delta_t)
+    T_all = tempGradData.getMolecTemp(x.flatten(),n*delta_t)
     C_all = C
     tmp_C_all = np.repeat([C_all],len(T_all)/len(C_all),axis=0).flatten('F')
     tmp_h = np.repeat([h],len(T_all)/len(h),axis = 0).flatten('F')
@@ -161,23 +121,17 @@ for n in range(0,runTime+1):
        #   at that location, taking adjusting the velocity resulting from the different pressure and viscosity values.  (HDT)
        # 	To do this there are several steps.
        #	First step is to determine a numerical value for the integral of temperature times viscosity.
-    TSumPow = np.cumsum(Temp2PowVec[(TempPlus*powerAce).astype(int)-1]) / TempGranularity
-       # integral of Temp^1.646
-         # Note baseline viscosity cancels out.
-         # T.sum.pow[length(T.sum.pow)]
-         # is sum or integral from 0 to end.
-    totInt = TSumPow[int(colLength*TempGranularity)-1]  #This is the integral from 0 to L of T^1.646.
-
-
+    TSumPow = np.cumsum(Temp2PowVec[(TempVec*powerAce).astype(int)-1]) / aveGranularity
+    totInt = np.trapz(Temp2PowVec[(TempVec*powerAce).astype(int)-1], x = colPosition)  #This is the integral from 0 to L of T^1.646.
     HeFactor = 0.000018662/(273.15**.646)  #Mult factor viscosity of He solvent.  This is delta.not in notes.
-    CStar = (p_i**2-p_o**2)/(2*HeFactor*TSumPow[int(colLength*TempGranularity)-1])
+    CStar = (p_i**2-p_o**2)/(2*HeFactor*totInt)
          ## C.star is =to (pi^2-po^2)/(2*integral over L of T^1.646)
          #	I am doing the integral as simply the sum of the histogram pieces.  I could
          #	improve this step by using Simpson's rule or the Newton binomial trick if the
          #	Temperature can be modeled as a simple function of two variates. (HDT)
-    velocity_x = ( (p_i**2-p_o**2)*TempPlus[temp.astype(int)] * (diameter/2)**2 / ((16*HeFactor*totInt )*np.sqrt(abs(p_i**2-(p_i**2-p_o**2)*TSumPow[temp.astype(int)]/totInt ))) )
+    velocity_x = ( (p_i**2-p_o**2)*TempVec[x.astype(int)] * (diameter/2)**2 / ((16*HeFactor*totInt )*np.sqrt(abs(p_i**2-(p_i**2-p_o**2)*TSumPow[x.astype(int)]/totInt ))) )
        # Velocity updated by HDT on 31 March 2015
-    p_x = np.sqrt(abs((p_i**2-(p_i**2-p_o**2)*TSumPow[temp.astype(int)]/totInt)) ).flatten()
+    p_x = np.sqrt(abs((p_i**2-(p_i**2-p_o**2)*TSumPow[x.astype(int)]/totInt)) ).flatten()
        #This is the pressure at x
        #
        # Pressure updated by HDT on 31 March 2015
@@ -188,52 +142,6 @@ for n in range(0,runTime+1):
        # For the Milshtein correction term we have
        #  W.Lang <- rnorm(j*n.mol, mean = 0, sd = sigma.delta )
        # x <- x + ( velocity.x*delta.t +W.Lang +sigma.delta^2*((W.lang-delta.t)^2)/2 )/(1 + k.all)
-    # mu1 = mean(x[0,])
-    # mu2 = mean(x[1,])
-    # if mu1 <= colLength:
-    #     totalTime1 = n*delta_t
-    #     speed1 = velocity_x[0]/(1+k_all[0])
-    #     spread1 = np.std(x[0,])*(1+k.all[0])/(60*velocity_x[0])
-    # if mu2 <= colLength:
-    #     totalTime2 = n*delta_t
-    #     speed2 = velocity_x[1]/(1+k_all[1])
-    #     spread2 = np.std(x[1,])*(1+k_all[1])/(60*velocity_x[1])
-    # if mu1 <= 20:
-    #    time1_20 <- n*delta.t
-    #    speed.1.20 <- velocity.x[1]/(1+k.all[1])
-    #    spread.1.20 <- sd(x[1,])*(1+k.all[1])/(60*velocity.x[1])
-    #  }
-    #  if(mu.2<= 20)
-    #  {
-    #    time.2.20 <- n*delta.t
-    #    speed.2.20 <- velocity.x[2]/(1+k.all[2])
-    #    spread.2.20 <- sd(x[2,])*(1+k.all[2])/(60*velocity.x[2])
-    #  }
-    #  if(mu.1<= col.length/4)
-    #  {
-    #    time.1.fourth <- n*delta.t
-    #    speed.1.fourth <- velocity.x[1]/(1+k.all[1])
-    #    spread.1.fourth <- sd(x[1,])*(1+k.all[1])/(60*velocity.x[1])
-    #  }
-    #  if(mu.2<= col.length/4)
-    #  {
-    #    time.2.fourth <- n*delta.t
-    #    speed.2.fourth <- velocity.x[2]/(1+k.all[2])
-    #    spread.2.fourth <- sd(x[2,])*(1+k.all[2])/(60*velocity.x[2])
-    #  }
-    #  if(mu.1<= col.length/2)
-    #  {
-    #    time.1.half <- n*delta.t
-    #    speed.1.half <- velocity.x[1]/(1+k.all[1])
-    #    spread.1.half <- sd(x[1,])*(1+k.all[1])/(60*velocity.x[1])
-    #  }
-    #  if(mu.2<= col.length/2)
-    #  {
-    #    time.2.half <- n*delta.t
-    #    speed.2.half <- velocity.x[2]/(1+k.all[2])
-    #    spread.2.half <- sd(x[2,])*(1+k.all[2])/(60*velocity.x[2])
-    #  }
-     #  1/(1+exp( h/(R*( T.all )) + C.all )
     if n%500==0:
         if np.max(x[0,]) > colLength:
             allDetected1 = x[0,][x[0,] > colLength]
@@ -262,7 +170,6 @@ for n in range(0,runTime+1):
         if np.min(x) > colLength:
            #break
            break
-        bigMatrix[moveCount,] = x.flatten()
         top_pks = np.zeros(j)
         pk_head = np.zeros(j)
         pk_tail = np.zeros(j)
@@ -274,7 +181,6 @@ for n in range(0,runTime+1):
         ax1.yaxis.set_label_position("left")
         ax2.yaxis.set_label_position("left")
         ax1.set_ylabel("Temperature (K)")
-        #x = bigMatrix[moveCount,].reshape(j,nMol)
         for i in range(0,j):
            lab = round(4*np.std(x[i,],axis=0,ddof=1) , 2)
            ax1.scatter(x[i,], 1.0*np.arange(1,nMol+1)/nMol*Tdelta+Tmin,color = colors[i],s = 0.5,  marker = markers[i],label =lab)
@@ -283,15 +189,14 @@ for n in range(0,runTime+1):
         peak_width = np.append(peak_width, 4*tmp)
         res = (np.mean(x[0,])-np.mean(x[1,]))/(4.0*tmp)
         plot_res = np.append(plot_res, res)
-        xx = np.linspace(0,colLength-1,(colLength-1)/.1 + 1)
-        yy = (TempVec[(xx*TempGranularity).astype(int)]+tpRate*delta_t*(moveCount)*pauseCount+T0)
+        xx = colPosition
+        yy = TempVec
         ax1.plot(xx,yy,color = 'red')
         #abline(h=( (delta.t*mm*pause.count*b) )/200,col='red') #programmed temperature
         ax2.set_ylabel('Density')
         for i in range(0,j):
            sns.kdeplot(x[i,],color=colors[i],ax=ax2) #density plot
         ##added DC #######################################
-        #currentTime = pauseCount*delta_t*moveCount
         time = np.append(time,moveCount)
         plt.text(0,0,' Time:\n ' + str(moveCount)  + ' s')
         f.savefig('Time:' + str(moveCount))
@@ -300,8 +205,6 @@ for n in range(0,runTime+1):
     #End of big.matrix for loop.
     ##big.matrix <- big.matrix[1:move.count,]
     #### End Standard Execution
-
-
 
 np.savetxt("vel1_x.csv", vel1_x, delimiter=",")
 np.savetxt("vel2_x.csv", vel2_x, delimiter=",")
@@ -314,6 +217,3 @@ np.savetxt("time.csv", time, delimiter=",")
 #write.csv(peak_width,file="peak_width.csv",row.names=FALSE)
 #write.csv(plot_res,file="plot_res.csv",row.names=FALSE)
 ##### End picture drawing
-
-
-
