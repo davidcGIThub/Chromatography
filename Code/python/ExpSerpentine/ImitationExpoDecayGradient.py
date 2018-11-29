@@ -58,12 +58,15 @@ for jj in range(0,nCorners-1):
     else:
         x_Lo = np.append(x_Lo,x_Lo[-1]+lenCross+1/TempGranularity)
 x_Lo = x_Lo[0:len(x_Lo)-1]
-##plt.plot(x_Lo,TempVec_Lo,'r.-')
-##TempVec_Lo = TempVec_Lo[0:int(colLength*TempGranularity)]
+plt.plot(x_Lo,TempVec_Lo,'r.-',label='Our Gradient Fit')
+TempVec_Lo = TempVec_Lo[0:int(colLength*TempGranularity)]
 
-### Compare gradients
-##plt.plot(x_Full,TempVec_Full,'k.')
-##plt.show()
+# Compare gradients
+plt.plot(x_Full,TempVec_Full,'k.',label='Dr. Tolley Gradient')
+plt.legend(loc=0)
+plt.xlabel('Position (cm)')
+plt.ylabel('Temeprature (C)')
+plt.show()
 
 # Time increment parameters
 runTime_n = 1500000
