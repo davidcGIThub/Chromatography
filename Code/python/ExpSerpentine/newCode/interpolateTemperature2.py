@@ -28,7 +28,8 @@ class GradientData:
         return Tnew
 
     def getTimeIndices(self,t):
-        t1 = 1.0*t/self.tstep
+        t0 = self.time[0]
+        t1 = 1.0*(t-t0)/self.tstep
         if(t1 == int(t1)):
             t2 = int(t1)
         else:
@@ -39,7 +40,6 @@ class GradientData:
     def plotTemperature(self,t,granularity):
         start = self.position[0]
         end = self.position[len(self.position)-1]
-        print("start: ", start, " end: ", end, " granularity: ", granularity)
         xcoords = np.linspace(start,end,end*granularity)
         (t1,t2) = self.getTimeIndices(t)
         T1 = self.Temperatures[t1]
