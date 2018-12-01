@@ -111,7 +111,7 @@ for n in range(0,runTime+1):
     Tmin = np.amin(TempPlus)
     Tdelta = Tmax-Tmin
     temp = abs(x*TempGranularity+1)
-    temp[temp > colLength*TempGranularity] = colLength*TempGranularity
+    temp[temp > colLength*TempGranularity] = colLength*TempGranularity - 1
     T_all = TempPlus[temp.astype(int)].flatten()
     C_all = C
     tmp_C_all = np.repeat([C_all],len(T_all)/len(C_all),axis=0).flatten('F')
@@ -207,7 +207,7 @@ for n in range(0,runTime+1):
         print(currentTime)
         time = np.append(time,currentTime)
         plt.text(0,0,' Time:\n ' + str(currentTime)  + ' s')
-        f.savefig('Time:' + str(intSec) + "_" + str(intDecimal))
+        f.savefig('Time_' + str(intSec) + "_" + str(intDecimal))
         plt.close(f)
     #End of big.matrix for loop.
     ##big.matrix <- big.matrix[1:move.count,]

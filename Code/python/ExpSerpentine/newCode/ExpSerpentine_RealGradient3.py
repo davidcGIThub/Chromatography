@@ -163,7 +163,7 @@ for n in range(0,runTime+1):
         intDecimal = int((currentTime - intSec)*100)
         time = np.append(time,currentTime)
         plt.text(0,0,' Time:\n ' + str(currentTime)  + ' s')
-        f.savefig('Time:' + str(intSec) + "_" + str(intDecimal))
+        f.savefig('Time_' + str(intSec) + "_" + str(intDecimal))
         plt.close(f)
     #### End Standard Execution
 
