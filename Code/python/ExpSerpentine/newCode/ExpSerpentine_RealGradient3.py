@@ -11,7 +11,7 @@ import interpolateTemperature2 as interpT
 ###		This code was UPDATED in Riva with Samuel in May 2016
 ####################
 TemperatureGradients = np.loadtxt(p.gradientFileName,delimiter = ',')
-colPosition = np.loadtxt(p.positionFileName,delimiter = ',')
+colPosition = np.loadtxt(p.positionFileName,delimiter = ',') * p.posUnits
 timeData = np.loadtxt(p.timeFileName,delimiter = ',')
 GData = interpT.GradientData(colPosition,timeData,TemperatureGradients)
 colLength = colPosition[len(colPosition)-1] - colPosition[0]  # Column length [cm]
@@ -80,7 +80,7 @@ for n in range(0,runTime+1):
 #for n in range(0,2):
     TempPlus = GData.getTemperatures(n*p.delta_t,p.tempGranularity)
     temp = abs(x*p.tempGranularity+1)
-    temp[temp > colLength*p.tempGranularity] = colLength*p.tempGranularity
+    temp[temp >= len(TempPlus)] = len(TempPlus) - 1
     T_all = TempPlus[temp.astype(int)].flatten()
     C_all = C
     tmp_C_all = np.repeat([C_all],len(T_all)/len(C_all),axis=0).flatten('F')
@@ -109,19 +109,19 @@ for n in range(0,runTime+1):
     Dt = 2*(( TempPrssRat*p.gamma1 + ((1+6*k_all+11*k_all**2)/((1+k_all)**2))*velocity_x.flatten()**2*p.gamma2/(TempPrssRat) + p.gamma3*velocity_x.flatten()**2*k_all/(1+k_all) )/(1+k_all))
     sigmaDelta = np.sqrt(abs(Dt*p.delta_t))
     x = np.reshape((x.flatten() + ( velocity_x.flatten()*p.delta_t/(1 + k_all) + np.random.normal(0,sigmaDelta,p.j*p.nMol))),np.shape(x))
-    if n%500==0:
-        if np.max(x[0,]) > colLength:
-            allDetected1 = x[0,][x[0,] > colLength]
-            newDetected1 = allDetected1[allDetected1 != detected1]
-            detected1 = np.concatenate(detected1, newDetected1)
-            detector[0, newDetected1] = n*p.delta_t
-        if np.max(x[1,]) > colLength:
-            allDetected2 = x[1,][x[1,] > colLength]
-            newDetected2 = allDetected2[allDetected2 != detected2]
-            detected2 = np.concatenate(detected2, newDetected2)
-            detector[1, newDetected2] = n*p.delta_t
-            if len(detected_2)+len(detected_1)-2 >= 2*p.nMol:
-                break
+    # if n%500==0:
+    #     if np.max(x[0,]) > colLength:
+    #         allDetected1 = x[0,][x[0,] > colLength]
+    #         newDetected1 = allDetected1[allDetected1 != detected1]
+    #         detected1 = np.concatenate(detected1, newDetected1)
+    #         detector[0, newDetected1] = n*p.delta_t
+    #     if np.max(x[1,]) > colLength:
+    #         allDetected2 = x[1,][x[1,] > colLength]
+    #         newDetected2 = allDetected2[allDetected2 != detected2]
+    #         detected2 = np.concatenate(detected2, newDetected2)
+    #         detector[1, newDetected2] = n*p.delta_t
+    #         if len(detected_2)+len(detected_1)-2 >= 2*p.nMol:
+    #             break
     if n % pauseCount == 0:
         vel1_x = np.append(vel1_x , np.mean(velocity_x[0]))
         vel2_x = np.append(vel2_x , np.mean(velocity_x[1]))
@@ -162,6 +162,7 @@ for n in range(0,runTime+1):
         intSec = int(currentTime)
         intDecimal = int((currentTime - intSec)*100)
         time = np.append(time,currentTime)
+        print(currentTime)
         plt.text(0,0,' Time:\n ' + str(currentTime)  + ' s')
         f.savefig('Time_' + str(intSec) + "_" + str(intDecimal))
         plt.close(f)

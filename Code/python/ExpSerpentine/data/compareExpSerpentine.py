@@ -8,7 +8,7 @@ vel1 = np.loadtxt("vel1_x.csv")
 vel2 = np.loadtxt("vel2_x.csv")
 std1 = np.loadtxt("std1.csv")
 std2 = np.loadtxt("std2.csv")
-t = np.loadtxt("time.csv")
+t = np.loadtxt("timeOutput.csv")
 
 resR = abs(np.loadtxt("resolution.csv"))
 pos1R = np.loadtxt("pos1_xR.csv")

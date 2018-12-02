@@ -111,7 +111,7 @@ for n in range(0,runTime+1):
     Tmin = np.amin(TempPlus)
     Tdelta = Tmax-Tmin
     temp = abs(x*TempGranularity+1)
-    temp[temp > colLength*TempGranularity] = colLength*TempGranularity - 1
+    temp[temp >= len(TempPlus)] = len(TempPlus) - 1
     T_all = TempPlus[temp.astype(int)].flatten()
     C_all = C
     tmp_C_all = np.repeat([C_all],len(T_all)/len(C_all),axis=0).flatten('F')
@@ -147,20 +147,20 @@ for n in range(0,runTime+1):
        # For the Milshtein correction term we have
        #  W.Lang <- rnorm(j*n.mol, mean = 0, sd = sigma.delta )
        # x <- x + ( velocity.x*delta.t +W.Lang +sigma.delta^2*((W.lang-delta.t)^2)/2 )/(1 + k.all)
-    if n%500==0:
-        if np.max(x[0,]) > colLength:
-            allDetected1 = x[0,][x[0,] > colLength]
-            newDetected1 = allDetected1[allDetected1 != detected1]
-            detected1 = np.concatenate(detected1, newDetected1)
-            detector[0, newDetected1] = n*delta_t
-        if np.max(x[1,]) > colLength:
-            allDetected2 = x[1,][x[1,] > colLength]
-            newDetected2 = allDetected2[allDetected2 != detected2]
-            detected2 = np.concatenate(detected2, newDetected2)
-            detector[1, newDetected2] = n*delta_t
-            if len(detected_2)+len(detected_1)-2 >= 2*nMol:
-                #break
-                break
+    # if n%500==0:
+    #     if np.max(x[0,]) > colLength:
+    #         allDetected1 = x[0,][x[0,] > colLength]
+    #         newDetected1 = allDetected1[allDetected1 != detected1]
+    #         detected1 = np.concatenate(detected1, newDetected1)
+    #         detector[0, newDetected1] = n*delta_t
+    #     if np.max(x[1,]) > colLength:
+    #         allDetected2 = x[1,][x[1,] > colLength]
+    #         newDetected2 = allDetected2[allDetected2 != detected2]
+    #         detected2 = np.concatenate(detected2, newDetected2)
+    #         detector[1, newDetected2] = n*delta_t
+    #         if len(detected_2)+len(detected_1)-2 >= 2*nMol:
+    #             #break
+    #             break
     if n % pauseCount == 0:
         #added DC ################################################
         vel1_x = np.append(vel1_x , np.mean(velocity_x[0]))

@@ -4,6 +4,7 @@ import math
 gradientFileName = "temperature.csv"
 positionFileName = "colPosition.csv"
 timeFileName = "time.csv"
+posUnits = 1 # assume cm, (if meters then posUnits= 100, if mm then posUnits = .1 etc . .)
 
 colors  = ['red','green','blue','grey30']
 markers = np.array(["o","^","P","x","D","v","s"])
@@ -12,6 +13,7 @@ nMol = 100                  # Number of molecules per compound used in simulatio
 gamma1 = 5.113e-3           # Molecular diffusion coefficient when using both temp and pressure.
 gamma3 = 7.676e-8           # Resistence to flow for adsorption/deporption (no pressure variable)
 gamma2 = 1.217e-9           # Golay's formula for resistence to transport when using both temp and pressure in diffusion expression.
+delta_t = 0.0001            # Time step
 X = np.array([9.0,10.0])    # Alkane length
 R = 8.3144621               # Boltzman's constant [Joules/ Kelvin mole]
 diameter = 0.0100           # Inner diameter of the column [cm]
