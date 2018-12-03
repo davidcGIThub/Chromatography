@@ -16,10 +16,10 @@ timeData = np.loadtxt(p.timeFileName,delimiter = ',')
 GData = interpT.GradientData(colPosition,timeData,TemperatureGradients)
 colLength = colPosition[len(colPosition)-1] - colPosition[0]  # Column length [cm]
 
-C = -7.22173 - 0.47406*p.X                # Formula for calculating C where X is the number of carbons.  Includes phase ratio
-C = np.array([-11.1277,-11.2829])       # ????? Stick with this assignment ????
-h = (2284.0 + 819*p.X) * 4.18442979       #  Calculation of enthalpy (Joules)
-h = np.array([34926.27 , 35245.71])     # ????? stick with this assigment ?????
+#C = -7.22173 - 0.47406*p.X                # Formula for calculating C where X is the number of carbons.  Includes phase ratio
+C = -9.7309 - 0.1552*p.X             #Formula using hard coded C values
+#h = (2284.0 + 819*p.X) * 4.18442979       #  Calculation of enthalpy (Joules)
+h = (7659.66012301 + 76.4301505179*p.X) * 4.18442979       #  Calculation of enthalpy (Joules) using hard code values to calc
 
 p_i = p.p_i*6894.757          # This converts pressure from psi units to Pascals
 p_o = p.p_o*6894.757          # This converts pressure from psi units to Pascals
@@ -54,23 +54,11 @@ for i in range(0,p.j):
 #	This is also used to plot location of the molecules.  The y-axis values for plot are determined
 #	from the matrix column index.  (Rows indicate analyte and column indicate individual molecules.)
 currentTime = timeData[0]
-resEnd = np.zeros((p.j,2))
-eluted1 = 1
-eluted2 = 1
-totalTime1 = 0
-totalTime2 = 0
-spread1 = 0
-spread2 = 0
-
-peak_width = np.array([])
-plot_res = np.array([])
+plot_res = np.zeros((p.j-1,0))
 #added_dc#############################################################
-vel1_x = np.array([])
-vel2_x = np.array([])
-pos1_x = np.array([])
-pos2_x = np.array([])
-std1 = np.array([])
-std2 = np.array([])
+vel_x = np.zeros((p.j,0))
+pos_x = np.zeros((p.j,0))
+std = np.zeros((p.j,0))
 time = np.array([])
 Tmax = np.amax(TemperatureGradients)
 Tmin = np.amin(TemperatureGradients)
@@ -114,21 +102,14 @@ for n in range(0,runTime+1):
     detector[np.where(x > colLength)] = 1
     moleculeExitTime[np.where(detector != prevDetector)] = currentTime
     if n % pauseCount == 0:
-        vel1_x = np.append(vel1_x , np.mean(velocity_x[0]))
-        vel2_x = np.append(vel2_x , np.mean(velocity_x[1]))
-        pos1_x = np.append(pos1_x , np.mean(x[0]))
-        pos2_x = np.append(pos2_x , np.mean(x[1]))
-        standev1 = np.std(x[0,],axis=0,ddof=1)
-        standev2 = np.std(x[1,],axis=0,ddof=1)
-        std1 = np.append(std1 , standev1)
-        std2 = np.append(std2 , standev2)
         if np.min(x) > colLength:
-           #break
-           break
-        top_pks = np.zeros(p.j)
-        pk_head = np.zeros(p.j)
-        pk_tail = np.zeros(p.j)
-        peakx = np.zeros(1)
+            break
+        print(currentTime)
+        time = np.append(time,currentTime)
+        vel_x = np.append(vel_x,np.array([np.mean(velocity_x,axis = 1)]).T,axis=1)
+        currentMeanPos = np.array([np.mean(x,axis = 1)]).T
+        pos_x = np.append(pos_x,currentMeanPos,axis=1)
+        std = np.append(std,np.array([np.std(x,axis=1,ddof=1)]).T,axis=1)
         f,(ax1,ax2) = plt.subplots(2, sharex=True)
         plt.xlim(0,colLength)
         plt.ylim(Tmin-Tmax)
@@ -138,11 +119,13 @@ for n in range(0,runTime+1):
         for i in range(0,p.j):
            lab = str(i) + ": " + str(round(4*np.std(x[i,],axis=0,ddof=1) , 2))
            ax1.scatter(x[i,], 1.0*np.arange(1,p.nMol+1)/p.nMol*Tdelta+Tmin,color = p.colors[i],s = 0.5,  marker = p.markers[i],label =lab)
-        ax1.legend()
-        tmp = (np.std(x[0,],axis=0,ddof=1)+np.std(x[1,],axis=0,ddof=1))/2.0
-        peak_width = np.append(peak_width, 4*tmp)
-        res = (np.mean(x[0,])-np.mean(x[1,]))/(4.0*tmp)
-        plot_res = np.append(plot_res, res)
+        ax1.legend(loc = 'best')
+        tmp = np.array([np.std(x,axis=1,ddof=1)]).T
+        tmp = (tmp[0:len(tmp)-1] + tmp[1:len(tmp)])/2
+        res = (currentMeanPos[0:len(currentMeanPos)-1]-currentMeanPos[1:len(currentMeanPos)]) / (4.0*tmp)
+        if(len(res) < 2):
+            res = res.T
+        plot_res = np.append(plot_res, res,axis=1)
         xx = np.linspace(0,colLength-1,(colLength-1)/.1 + 1)
         yy = (TempPlus[(xx*p.tempGranularity).astype(int)])
         ax1.plot(xx,yy,color = 'red')
@@ -151,22 +134,14 @@ for n in range(0,runTime+1):
            sns.kdeplot(x[i,],color=p.colors[i],ax=ax2) #density plot
         intSec = int(currentTime)
         intDecimal = int((currentTime - intSec)*100)
-        time = np.append(time,currentTime)
-        print(currentTime)
         plt.text(0,0,' Time:\n ' + str(currentTime)  + ' s')
         f.savefig('Time_' + str(intSec) + "_" + str(intDecimal))
         plt.close(f)
     #### End Standard Execution
-np.savetxt("x.csv", x, delimiter=",")
-np.savetxt("detector.csv", detector, delimiter=",")
 np.savetxt("molecExitTime.csv", moleculeExitTime, delimiter=",")
-np.savetxt("vel1_x.csv", vel1_x, delimiter=",")
-np.savetxt("vel2_x.csv", vel2_x, delimiter=",")
-np.savetxt("pos1_x.csv", pos1_x, delimiter=",")
-np.savetxt("pos2_x.csv", pos2_x, delimiter=",")
-np.savetxt("std1.csv", std1, delimiter=",")
-np.savetxt("std2.csv", std2, delimiter=",")
+np.savetxt("vel_x.csv", vel_x, delimiter=",")
+np.savetxt("pos_x.csv", pos_x, delimiter=",")
+np.savetxt("std.csv", std, delimiter=",")
 np.savetxt("resolution.csv", plot_res, delimiter=",")
 np.savetxt("timeOutput.csv", time, delimiter=",")
-#write.csv(peak_width,file="peak_width.csv",row.names=FALSE)
 ##### End picture drawing
