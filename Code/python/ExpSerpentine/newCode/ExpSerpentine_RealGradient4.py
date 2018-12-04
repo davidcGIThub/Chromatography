@@ -30,7 +30,8 @@ Temp2PowVec = np.arange(0,1000+1/p.powerAce,1/p.powerAce)**1.646        #address
 #	The vector 'Temp2Pow' is sequence of temperatures raised to the 1.646 power
 #		to adjust for the viscosity of helium.
 #################
-runTime = int( (timeData[len(timeData)-1] - timeData[0]) / p.delta_t)  #Number of potential steps to get compounds out of column.
+startTime = int(timeData[0] / p.delta_t)
+runTime = int( timeData[len(timeData)-1] / p.delta_t)  #Number of potential steps to get compounds out of column.
 pauseCount = int(1/p.delta_t) #number of frames to skip in plotting results.  The 'big.matrix'
                             # takes a snapshot at every 'pause.count' time for illustrating the
                             # progress of the molecules.
@@ -64,7 +65,7 @@ Tmax = np.amax(TemperatureGradients)
 Tmin = np.amin(TemperatureGradients)
 Tdelta = Tmax-Tmin
 
-for n in range(0,runTime+1):
+for n in range(startTime,runTime+1):
 #for n in range(0,2):
     currentTime = round(n*p.delta_t,3)
     TempPlus = GData.getTemperatures(n*p.delta_t,p.tempGranularity)

@@ -37,7 +37,7 @@ plt.show()
 
 plt.figure(4)
 for i in range(len(res)):
-    plt.plot(t,std[i],label = "Compound " + str(i) + " to " + str(i+1))
+    plt.plot(t,res[i],label = "Compound " + str(i) + " to " + str(i+1))
 plt.legend(loc = 'best')
 plt.xlabel("Time (sec)")
 plt.ylabel("Resolution")

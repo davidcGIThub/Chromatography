@@ -8,8 +8,8 @@ posUnits = 1 # assume cm, (if meters then posUnits= 100, if mm then posUnits = .
 
 colors  = ['red','green','blue','grey30']
 markers = np.array(["o","^","x","D","v","s"])
-j = 3                     # Number of compounds
-X = np.array([9.0,10.0,11.0])    # Alkane length
+j = 2                     # Number of compounds
+X = np.array([9.0,10.0])    # Alkane length
 nMol = 100                  # Number of molecules per compound used in simulation
 gamma1 = 5.113e-3           # Molecular diffusion coefficient when using both temp and pressure.
 gamma3 = 7.676e-8           # Resistence to flow for adsorption/deporption (no pressure variable)
